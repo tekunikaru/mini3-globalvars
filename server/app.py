@@ -4,16 +4,17 @@ from flask import Flask, request, jsonify, abort
 
 app = Flask(__name__)
 
+DEBUG = False
+
 db = sqlite3.connect(":memory:", check_same_thread=False)
-db.execute(open("./server/schema.sql").read())
 
-
-def valid_var(name: str) -> bool:
-    return re.fullmatch(r"\w+", name) is not None
-
+try:
+    db.execute(open("./schema.sql").read())
+except FileNotFoundError:
+    db.execute(open("./server/schema.sql").read())
 
 @app.route("/", methods=["GET"])
-def get_all_vars():
+def list_vars():
     cur = db.cursor()
     cur.execute("SELECT varname FROM GlobalVars")
     rows = cur.fetchall()
@@ -23,7 +24,7 @@ def get_all_vars():
 
 @app.route("/<var_name>", methods=["GET"])
 def get_var(var_name):
-    if not valid_var(var_name):
+    if re.match(r"\w+", var_name) is None:
         abort(400, description="Invalid global variable name")
     cur = db.cursor()
     cur.execute("SELECT varval FROM GlobalVars WHERE varname = ?", [var_name])
@@ -36,7 +37,7 @@ def get_var(var_name):
 
 @app.route("/<var_name>", methods=["POST"])
 def post_var(var_name):
-    if not valid_var(var_name):
+    if re.match(r"\w+", var_name) is None:
         abort(400, description="Invalid global variable name")
 
     var_val = request.get_data(as_text=True)
@@ -54,6 +55,14 @@ def post_var(var_name):
         db.commit()
         return "updated", 200
 
+@app.route("/<var_name>", methods=["DELETE"])
+def del_var(var_name):
+    if re.match(r"\w+", var_name) is None:
+        abort(400, description="Invalid global variable name")
+    cur = db.cursor()
+    cur.execute("DELETE FROM GlobalVars WHERE varname = ?", [var_name])
+    db.commit()
+    return "deleted", 200
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=DEBUG)

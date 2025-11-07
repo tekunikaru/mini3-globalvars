@@ -24,7 +24,7 @@ def list_vars():
 
 @app.route("/<var_name>", methods=["GET"])
 def get_var(var_name):
-    if re.match(r"\W", var_name) is not None:
+    if len(re.findall(r'[^a-zA-Z]', var_name))!=0:
         abort(400, description="Invalid global variable name")
     cur = db.cursor()
     cur.execute("SELECT varval FROM GlobalVars WHERE varname = ?", [var_name])
@@ -37,7 +37,7 @@ def get_var(var_name):
 
 @app.route("/<var_name>", methods=["POST"])
 def post_var(var_name):
-    if re.match(r"\W", var_name) is not None:
+    if len(re.findall(r'[^a-zA-Z]', var_name))!=0:
         abort(400, description="Invalid global variable name")
 
     var_val = request.get_data(as_text=True)
@@ -57,7 +57,7 @@ def post_var(var_name):
 
 @app.route("/<var_name>", methods=["DELETE"])
 def del_var(var_name):
-    if re.match(r"\W", var_name) is not None:
+    if len(re.findall(r'[^a-zA-Z]', var_name))!=0:
         abort(400, description="Invalid global variable name")
     cur = db.cursor()
     cur.execute("DELETE FROM GlobalVars WHERE varname = ?", [var_name])
